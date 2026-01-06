@@ -1,0 +1,87 @@
+image: node:18
+
+clone:
+  depth: 1
+
+pipelines:
+  custom:
+    dev:
+      - step:
+          name: Build & Deploy - Dev
+          # runs-on:
+          #   - 'x86'
+          deployment: Test
+          caches:
+            - node
+          # size: 2x # If docker does not have enough memory for build, double the resources (uncomment)
+          script:
+            - npm install
+            - npm run build:dev
+            - pipe: atlassian/aws-s3-deploy:2.1.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                S3_BUCKET: $S3_BUCKET
+                LOCAL_PATH: 'dist'
+            - pipe: atlassian/aws-cloudfront-invalidate:0.12.0
+              variables:
+                # You can find these variables in Bitbucket by going to Repository Settings > Pipelines > Deployments > Production
+                DISTRIBUTION_ID: $DISTRIBUTION_ID
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
+    staging:
+      - step:
+          name: Build & Deploy - Staging
+          # runs-on:
+          #   - 'x86'
+          deployment: Staging
+          caches:
+            - node
+          # size: 2x # If docker does not have enough memory for build, double the resources (uncomment)
+          script:
+            - npm install
+            - npm run build:staging
+            - pipe: atlassian/aws-s3-deploy:1.1.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                S3_BUCKET: $S3_BUCKET
+                LOCAL_PATH: 'dist'
+            - pipe: atlassian/aws-cloudfront-invalidate:0.6.0
+              variables:
+                # You can find these variables in Bitbucket by going to Repository Settings > Pipelines > Deployments > Production
+                DISTRIBUTION_ID: $DISTRIBUTION_ID
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
+    production:
+      - step:
+          name: Build & Deploy - Production
+          # runs-on:
+          #   - 'x86'
+          deployment: Production
+          caches:
+            - node
+          # size: 2x # If docker does not have enough memory for build, double the resources (uncomment)
+          script:
+            - npm install
+            - npm run build
+            - pipe: atlassian/aws-s3-deploy:1.1.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                S3_BUCKET: $S3_BUCKET
+                LOCAL_PATH: 'dist'
+            - pipe: atlassian/aws-cloudfront-invalidate:0.6.0
+              variables:
+                # You can find these variables in Bitbucket by going to Repository Settings > Pipelines > Deployments > Production
+                DISTRIBUTION_ID: $DISTRIBUTION_ID
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
